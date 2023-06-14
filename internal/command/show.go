@@ -167,7 +167,7 @@ func (c *ShowCommand) showFromPath(path string) (*plans.Plan, *views.JsonPlan, *
 	// state file. First, try to get a plan and associated data from a local
 	// plan file. If that fails, try to get a json plan from the path argument.
 	// If that fails, try to get the statefile from the path argument.
-	plan, jsonPlan, stateFile, config, planErr = getPlanFromPath(path)
+	plan, jsonPlan, stateFile, config, planErr = c.getPlanFromPath(path)
 	if planErr != nil {
 		stateFile, stateErr = getStateFromPath(path)
 		if stateErr != nil {
@@ -190,7 +190,7 @@ func (c *ShowCommand) showFromPath(path string) (*plans.Plan, *views.JsonPlan, *
 // yield a json plan, and cloud plans do not yield real plan/state/config
 // structs. An error generally suggests that the given path is either a
 // directory or a statefile.
-func getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File, *configs.Config, error) {
+func (c *ShowCommand) getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File, *configs.Config, error) {
 	var err error
 	var plan *plans.Plan
 	var jsonPlan *views.JsonPlan
@@ -204,9 +204,9 @@ func getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File
 
 	if pf.IsLocal() {
 		plan, stateFile, config, err = getDataFromPlanfileReader(pf.Local)
+	} else if pf.IsCloud() && c.viewType == arguments.ViewHuman {
+		jsonPlan, err = c.getRedactedDataFromCloudPlan(pf.Cloud)
 	}
-
-	// TODO: get jsonplan from cloud pf
 
 	return plan, jsonPlan, stateFile, config, err
 }
