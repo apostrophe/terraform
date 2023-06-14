@@ -27,6 +27,7 @@ import (
 // contents of a Terraform plan or state file.
 type ShowCommand struct {
 	Meta
+	viewType arguments.ViewType
 }
 
 func (c *ShowCommand) Run(rawArgs []string) int {
@@ -41,6 +42,7 @@ func (c *ShowCommand) Run(rawArgs []string) int {
 		c.View.HelpPrompt("show")
 		return 1
 	}
+	c.viewType = args.ViewType
 
 	// Set up view
 	view := views.NewShow(args.ViewType, c.View)
