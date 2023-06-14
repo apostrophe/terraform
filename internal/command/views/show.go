@@ -20,7 +20,7 @@ import (
 
 type Show interface {
 	// Display renders the plan, if it is available. If plan is nil, it renders the statefile.
-	Display(config *configs.Config, plan *plans.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int
+	Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int
 
 	// Diagnostics renders early diagnostics, resulting from argument parsing.
 	Diagnostics(diags tfdiags.Diagnostics)
@@ -43,12 +43,14 @@ type ShowHuman struct {
 
 var _ Show = (*ShowHuman)(nil)
 
-func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
+func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
 	renderer := jsonformat.Renderer{
 		Colorize:            v.view.colorize,
 		Streams:             v.view.streams,
 		RunningInAutomation: v.view.runningInAutomation,
 	}
+
+	// TODO: display jsonPlan instead of plan if one was received
 
 	if plan != nil {
 		outputs, changed, drift, attrs, err := jsonplan.MarshalForRenderer(plan, schemas)
@@ -111,7 +113,9 @@ type ShowJSON struct {
 
 var _ Show = (*ShowJSON)(nil)
 
-func (v *ShowJSON) Display(config *configs.Config, plan *plans.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
+func (v *ShowJSON) Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
+	// TODO: display jsonPlan instead of plan if one was received
+
 	if plan != nil {
 		jsonPlan, err := jsonplan.Marshal(config, plan, stateFile, schemas)
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/internal/addrs"
 	"github.com/hashicorp/terraform/internal/command/arguments"
+	"github.com/hashicorp/terraform/internal/command/jsonformat"
 	"github.com/hashicorp/terraform/internal/configs/configschema"
 	"github.com/hashicorp/terraform/internal/initwd"
 	"github.com/hashicorp/terraform/internal/plans"
@@ -24,6 +25,7 @@ import (
 func TestShowHuman(t *testing.T) {
 	testCases := map[string]struct {
 		plan       *plans.Plan
+		jsonPlan   *jsonformat.Plan
 		stateFile  *statefile.File
 		schemas    *terraform.Schemas
 		wantExact  bool
@@ -32,11 +34,14 @@ func TestShowHuman(t *testing.T) {
 		"plan file": {
 			testPlan(t),
 			nil,
+			nil,
 			testSchemas(),
 			false,
 			"# test_resource.foo will be created",
 		},
+		// TODO: test passing a json plan
 		"statefile": {
+			nil,
 			nil,
 			&statefile.File{
 				Serial:  0,
@@ -48,6 +53,7 @@ func TestShowHuman(t *testing.T) {
 			"# test_resource.foo:",
 		},
 		"empty statefile": {
+			nil,
 			nil,
 			&statefile.File{
 				Serial:  0,
@@ -62,6 +68,7 @@ func TestShowHuman(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			nil,
 			true,
 			"No state.\n",
 		},
@@ -73,7 +80,7 @@ func TestShowHuman(t *testing.T) {
 			view.Configure(&arguments.View{NoColor: true})
 			v := NewShow(arguments.ViewHuman, view)
 
-			code := v.Display(nil, testCase.plan, testCase.stateFile, testCase.schemas)
+			code := v.Display(nil, testCase.plan, testCase.jsonPlan, testCase.stateFile, testCase.schemas)
 			if code != 0 {
 				t.Errorf("expected 0 return code, got %d", code)
 			}
@@ -91,13 +98,17 @@ func TestShowHuman(t *testing.T) {
 func TestShowJSON(t *testing.T) {
 	testCases := map[string]struct {
 		plan      *plans.Plan
+		jsonPlan  *jsonformat.Plan
 		stateFile *statefile.File
 	}{
 		"plan file": {
 			testPlan(t),
 			nil,
+			nil,
 		},
+		// TODO: test passing a json plan
 		"statefile": {
+			nil,
 			nil,
 			&statefile.File{
 				Serial:  0,
@@ -107,6 +118,7 @@ func TestShowJSON(t *testing.T) {
 		},
 		"empty statefile": {
 			nil,
+			nil,
 			&statefile.File{
 				Serial:  0,
 				Lineage: "fake-for-testing",
@@ -114,6 +126,7 @@ func TestShowJSON(t *testing.T) {
 			},
 		},
 		"nothing": {
+			nil,
 			nil,
 			nil,
 		},
@@ -144,7 +157,7 @@ func TestShowJSON(t *testing.T) {
 				},
 			}
 
-			code := v.Display(config, testCase.plan, testCase.stateFile, schemas)
+			code := v.Display(config, testCase.plan, testCase.jsonPlan, testCase.stateFile, schemas)
 
 			if code != 0 {
 				t.Errorf("expected 0 return code, got %d", code)
