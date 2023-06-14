@@ -555,10 +555,16 @@ func (b *Cloud) confirm(stopCtx context.Context, op *backend.Operation, opts *te
 // incidental values that might be important for displaying that plan. It is
 // intended for use by higher-level packages (like the `show` command) that
 // should not need to know things about the TFC API or go-tfe's resource types.
-func (b *Cloud) ReadRedactedPlanForRun(ctx context.Context, runID string) (*jsonformat.Plan, plans.Mode, []jsonformat.PlanRendererOpt, error) {
+func (b *Cloud) ReadRedactedPlanForRun(ctx context.Context, runID, hostname string) (*jsonformat.Plan, plans.Mode, []jsonformat.PlanRendererOpt, error) {
 	mode := plans.NormalMode
 	var opts []jsonformat.PlanRendererOpt
 
+	// Bail early if wrong hostname
+	if hostname != b.hostname {
+		return nil, mode, opts, fmt.Errorf("hostname for run (%s) does not match the configured cloud integration (%s)", hostname, b.hostname)
+	}
+
+	// Get run and plan
 	r, err := b.client.Runs.ReadWithOptions(ctx, runID, &tfe.RunReadOptions{Include: []tfe.RunIncludeOpt{tfe.RunPlan}})
 	if err != nil {
 		return nil, mode, opts, err
