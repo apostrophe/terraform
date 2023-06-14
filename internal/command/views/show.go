@@ -34,6 +34,7 @@ type Show interface {
 type JsonPlan struct {
 	Plan *jsonformat.Plan
 	Mode plans.Mode
+	Opts []jsonformat.PlanRendererOpt
 }
 
 func NewShow(vt arguments.ViewType, view *View) Show {
