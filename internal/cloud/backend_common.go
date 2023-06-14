@@ -550,6 +550,51 @@ func (b *Cloud) confirm(stopCtx context.Context, op *backend.Operation, opts *te
 	return <-result
 }
 
+// ReadRedactedPlanForRun retrieves the redacted plan JSON for an existing run
+// and returns it as the struct type expected by jsonformat.Renderer, along with
+// incidental values that might be important for displaying that plan. It is
+// intended for use by higher-level packages (like the `show` command) that
+// should not need to know things about the TFC API or go-tfe's resource types.
+func (b *Cloud) ReadRedactedPlanForRun(ctx context.Context, runID string) (*jsonformat.Plan, plans.Mode, []jsonformat.PlanRendererOpt, error) {
+	mode := plans.NormalMode
+	var opts []jsonformat.PlanRendererOpt
+
+	r, err := b.client.Runs.ReadWithOptions(ctx, runID, &tfe.RunReadOptions{Include: []tfe.RunIncludeOpt{tfe.RunPlan}})
+	if err != nil {
+		return nil, mode, opts, err
+	}
+
+	// Sort out the run mode
+	if r.IsDestroy {
+		mode = plans.DestroyMode
+	} else if r.RefreshOnly {
+		mode = plans.RefreshOnlyMode
+	}
+
+	// Check that the plan actually finished
+	switch r.Plan.Status {
+	case tfe.PlanErrored:
+		// Errored plans might still be displayable, but we want to mention it to the renderer.
+		opts = append(opts, jsonformat.Errored, jsonformat.CanNotApply)
+	case tfe.PlanFinished:
+		// Good to go, but alert the renderer if it has no changes.
+		if !r.Plan.HasChanges {
+			opts = append(opts, jsonformat.CanNotApply)
+		}
+	default:
+		// Bail, we can't use this.
+		err = fmt.Errorf("can't display a cloud plan that is currently %s", r.Plan.Status)
+		return nil, mode, opts, err
+	}
+
+	// Fetch the redacted json plan!
+	jsonPlan, err := readRedactedPlan(ctx, b.client.BaseURL(), b.token, r.Plan.ID)
+	if err != nil {
+		return nil, mode, opts, err
+	}
+	return jsonPlan, mode, opts, nil
+}
+
 // This method will fetch the redacted plan output and marshal the response into
 // a struct the jsonformat.Renderer expects.
 //
@@ -592,6 +637,8 @@ var readRedactedPlan func(context.Context, url.URL, string, string) (*jsonformat
 
 	return p, nil
 }
+
+// TODO equivalent function to ^^ for unredacted json plan. Can use client.Plans.ReadJSONOutput().
 
 func checkResponseCode(r *http.Response) error {
 	if r.StatusCode >= 200 && r.StatusCode <= 299 {
