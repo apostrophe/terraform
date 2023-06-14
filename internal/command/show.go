@@ -4,11 +4,14 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/hashicorp/terraform/internal/backend"
+	"github.com/hashicorp/terraform/internal/cloud"
+	"github.com/hashicorp/terraform/internal/cloud/cloudplan"
 	"github.com/hashicorp/terraform/internal/command/arguments"
 	"github.com/hashicorp/terraform/internal/command/views"
 	"github.com/hashicorp/terraform/internal/configs"
@@ -204,6 +207,35 @@ func getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File
 	// TODO: get jsonplan from cloud pf
 
 	return plan, jsonPlan, stateFile, config, err
+}
+
+func (c *ShowCommand) getRedactedDataFromCloudPlan(plan *cloudplan.SavedPlanBookmark) (*views.JsonPlan, error) {
+	// - set up backend
+	// - fetch the run with include: Plan
+	// - somehow get the result of calling the private cloud.readRedactedPlan() function (not a backend method)
+	// - also we'll need an equivalent way to fetch unredacted json, if called for and allowed
+	// - derive plan mode from attrs on the tfe.Run value
+	// - build & return wrapper stwruct
+
+	b, backendDiags := c.Backend(nil)
+	if backendDiags.HasErrors() {
+		return nil, backendDiags.Err()
+	}
+	// Cloud plans only work with cloud backend.
+	cl, ok := b.(*cloud.Cloud)
+	if !ok {
+		return nil, fmt.Errorf("can't show a saved cloud plan unless the current root module is connected to Terraform Cloud")
+	}
+
+	jsonPlan, mode, opts, err := cl.ReadRedactedPlanForRun(context.Background(), plan.RunID, plan.Hostname)
+	if err != nil {
+		return nil, err
+	}
+	return &views.JsonPlan{
+		Plan: jsonPlan,
+		Mode: mode,
+		Opts: opts,
+	}, nil
 }
 
 // getDataFromPlanfileReader returns a plan, statefile, and config, extracted from a local plan file.
