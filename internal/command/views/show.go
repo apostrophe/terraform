@@ -20,10 +20,19 @@ import (
 
 type Show interface {
 	// Display renders the plan, if it is available. If plan is nil, it renders the statefile.
-	Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int
+	Display(config *configs.Config, plan *plans.Plan, jsonPlan *JsonPlan, stateFile *statefile.File, schemas *terraform.Schemas) int
 
 	// Diagnostics renders early diagnostics, resulting from argument parsing.
 	Diagnostics(diags tfdiags.Diagnostics)
+}
+
+// JsonPlan is a wrapper struct that associates a plan mode with a
+// jsonformat.Plan. This is necessary when terraform show receives a
+// pre-constructed json plan, because the json plan format itself doesn't
+// include the run mode.
+type JsonPlan struct {
+	Plan *jsonformat.Plan
+	Mode plans.Mode
 }
 
 func NewShow(vt arguments.ViewType, view *View) Show {
@@ -43,7 +52,7 @@ type ShowHuman struct {
 
 var _ Show = (*ShowHuman)(nil)
 
-func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
+func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, jsonPlan *JsonPlan, stateFile *statefile.File, schemas *terraform.Schemas) int {
 	renderer := jsonformat.Renderer{
 		Colorize:            v.view.colorize,
 		Streams:             v.view.streams,
@@ -113,7 +122,7 @@ type ShowJSON struct {
 
 var _ Show = (*ShowJSON)(nil)
 
-func (v *ShowJSON) Display(config *configs.Config, plan *plans.Plan, jsonPlan *jsonformat.Plan, stateFile *statefile.File, schemas *terraform.Schemas) int {
+func (v *ShowJSON) Display(config *configs.Config, plan *plans.Plan, jsonPlan *JsonPlan, stateFile *statefile.File, schemas *terraform.Schemas) int {
 	// TODO: display jsonPlan instead of plan if one was received
 
 	if plan != nil {

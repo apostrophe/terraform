@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/terraform/internal/addrs"
 	"github.com/hashicorp/terraform/internal/command/arguments"
-	"github.com/hashicorp/terraform/internal/command/jsonformat"
 	"github.com/hashicorp/terraform/internal/configs/configschema"
 	"github.com/hashicorp/terraform/internal/initwd"
 	"github.com/hashicorp/terraform/internal/plans"
@@ -25,7 +24,7 @@ import (
 func TestShowHuman(t *testing.T) {
 	testCases := map[string]struct {
 		plan       *plans.Plan
-		jsonPlan   *jsonformat.Plan
+		jsonPlan   *JsonPlan
 		stateFile  *statefile.File
 		schemas    *terraform.Schemas
 		wantExact  bool
@@ -98,7 +97,7 @@ func TestShowHuman(t *testing.T) {
 func TestShowJSON(t *testing.T) {
 	testCases := map[string]struct {
 		plan      *plans.Plan
-		jsonPlan  *jsonformat.Plan
+		jsonPlan  *JsonPlan
 		stateFile *statefile.File
 	}{
 		"plan file": {

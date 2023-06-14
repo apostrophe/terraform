@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/terraform/internal/backend"
 	"github.com/hashicorp/terraform/internal/command/arguments"
-	"github.com/hashicorp/terraform/internal/command/jsonformat"
 	"github.com/hashicorp/terraform/internal/command/views"
 	"github.com/hashicorp/terraform/internal/configs"
 	"github.com/hashicorp/terraform/internal/plans"
@@ -84,10 +83,10 @@ func (c *ShowCommand) Synopsis() string {
 	return "Show the current state or a saved plan"
 }
 
-func (c *ShowCommand) show(path string) (*plans.Plan, *jsonformat.Plan, *statefile.File, *configs.Config, *terraform.Schemas, tfdiags.Diagnostics) {
+func (c *ShowCommand) show(path string) (*plans.Plan, *views.JsonPlan, *statefile.File, *configs.Config, *terraform.Schemas, tfdiags.Diagnostics) {
 	var diags, showDiags tfdiags.Diagnostics
 	var plan *plans.Plan
-	var jsonPlan *jsonformat.Plan
+	var jsonPlan *views.JsonPlan
 	var stateFile *statefile.File
 	var config *configs.Config
 	var schemas *terraform.Schemas
@@ -151,11 +150,11 @@ func (c *ShowCommand) showFromLatestStateSnapshot() (*statefile.File, tfdiags.Di
 	return stateFile, diags
 }
 
-func (c *ShowCommand) showFromPath(path string) (*plans.Plan, *jsonformat.Plan, *statefile.File, *configs.Config, tfdiags.Diagnostics) {
+func (c *ShowCommand) showFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File, *configs.Config, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 	var planErr, stateErr error
 	var plan *plans.Plan
-	var jsonPlan *jsonformat.Plan
+	var jsonPlan *views.JsonPlan
 	var stateFile *statefile.File
 	var config *configs.Config
 
@@ -186,10 +185,10 @@ func (c *ShowCommand) showFromPath(path string) (*plans.Plan, *jsonformat.Plan, 
 // yield a json plan, and cloud plans do not yield real plan/state/config
 // structs. An error generally suggests that the given path is either a
 // directory or a statefile.
-func getPlanFromPath(path string) (*plans.Plan, *jsonformat.Plan, *statefile.File, *configs.Config, error) {
+func getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan, *statefile.File, *configs.Config, error) {
 	var err error
 	var plan *plans.Plan
-	var jsonPlan *jsonformat.Plan
+	var jsonPlan *views.JsonPlan
 	var stateFile *statefile.File
 	var config *configs.Config
 
