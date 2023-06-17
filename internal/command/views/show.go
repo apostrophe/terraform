@@ -64,10 +64,7 @@ func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, jsonPlan *
 	// Prefer to display a pre-built JSON plan, if we got one; then, fall back
 	// to building one ourselves.
 	if jsonPlan != nil {
-		// TODO: need to get values for CanNotApply and Errored from somewhere... :thonking:
-		var opts []jsonformat.PlanRendererOpt
-
-		renderer.RenderHumanPlan(*jsonPlan.Plan, jsonPlan.Mode, opts...)
+		renderer.RenderHumanPlan(*jsonPlan.Plan, jsonPlan.Mode, jsonPlan.Opts...)
 	} else if plan != nil {
 		outputs, changed, drift, attrs, err := jsonplan.MarshalForRenderer(plan, schemas)
 		if err != nil {
