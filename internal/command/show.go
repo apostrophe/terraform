@@ -202,10 +202,12 @@ func (c *ShowCommand) getPlanFromPath(path string) (*plans.Plan, *views.JsonPlan
 		return nil, nil, nil, nil, err
 	}
 
-	if pf.IsLocal() {
-		plan, stateFile, config, err = getDataFromPlanfileReader(pf.Local)
-	} else if pf.IsCloud() && c.viewType == arguments.ViewHuman {
-		jsonPlan, err = c.getRedactedDataFromCloudPlan(pf.Cloud)
+	if lp, ok := pf.Local(); ok {
+		plan, stateFile, config, err = getDataFromPlanfileReader(lp)
+	} else if cp, ok := pf.Cloud(); ok {
+		if c.viewType == arguments.ViewHuman {
+			jsonPlan, err = c.getRedactedDataFromCloudPlan(cp)
+		}
 	}
 
 	return plan, jsonPlan, stateFile, config, err
